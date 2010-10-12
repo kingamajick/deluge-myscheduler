@@ -6,19 +6,19 @@ ScheduleSelectPanel = Ext.extend(Ext.form.FieldSet, {
 		}, config);
 		ScheduleSelectPanel.superclass.constructor.call(this, config);
 	},
-	
+
 	onRender: function(ct, position) {
 		ScheduleSelectPanel.superclass.onRender.call(this, ct, position);
-		
+
 		var dom = this.body.dom;
 		var table = createEl(dom, 'table');
-		
+
 		function createEl(parent, type) {
 			var el = document.createElement(type);
 			parent.appendChild(el);
 			return el;
 		}
-		
+
 		Ext.each(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], function(day) {
 			var row = createEl(table, 'tr');
 			var label = createEl(row, 'th');
@@ -40,7 +40,7 @@ SchedulerPreferences = Ext.extend(Ext.Panel, {
 		}, config);
 		SchedulerPreferences.superclass.constructor.call(this, config);
 	},
-	
+
 	initComponent: function() {
 		SchedulerPreferences.superclass.initComponent.call(this);
 
@@ -50,16 +50,16 @@ SchedulerPreferences = Ext.extend(Ext.Panel, {
 			border: false,
 			autoHeight: true
 		});
-		
+
 		this.schedule = this.form.add(new ScheduleSelectPanel());
-		
+
 		this.slowSettings = this.form.add({
 			xtype: 'fieldset',
 			title: _('Slow Settings'),
 			autoHeight: true,
 			defaultType: 'uxspinner'
 		});
-		
+
 		this.downloadLimit = this.slowSettings.add({
 			fieldLabel: _('Download Limit'),
 			name: 'download_limit'
@@ -73,14 +73,14 @@ SchedulerPreferences = Ext.extend(Ext.Panel, {
 			name: 'active_torrents'
 		});
 	},
-	
+
 	onRender: function(ct, position) {
 		SchedulerPreferences.superclass.onRender.call(this, ct, position);
 		this.form.layout = new Ext.layout.FormLayout();
 		this.form.layout.setContainer(this);
 		this.form.doLayout();
 	},
-	
+
 	onShow: function() {
 		SchedulerPreferences.superclass.onShow.call(this);
 	}
@@ -93,11 +93,11 @@ SchedulerPlugin = Ext.extend(Deluge.Plugin, {
 		}, config);
 		SchedulerPlugin.superclass.constructor.call(this, config);
 	},
-	
+
 	onDisable: function() {
 		Deluge.Preferences.removePage(this.prefsPage);
 	},
-	
+
 	onEnable: function() {
 		this.prefsPage = new SchedulerPreferences();
 		this.prefsPage = Deluge.Preferences.addPage(this.prefsPage);

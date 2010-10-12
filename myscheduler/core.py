@@ -51,6 +51,8 @@ DEFAULT_PREFS = {
     "low_down": -1.0,
     "low_up": -1.0,
     "low_active": -1,
+    "low_active_down": -1,
+    "low_active_up": -1,
     "button_state": [[0] * 7 for dummy in xrange(24)],
     "force_use_individual" : True,
     "force_unforce_finished" : True,    
@@ -63,6 +65,14 @@ STATES = {
     1: "Yellow",
     2: "Red"
 }
+
+CONTROLLED_SETTINGS = [
+    "max_download_speed",
+    "max_download_speed",
+    "max_active_limit",
+    "max_active_downloading",
+    "max_active_seeding"
+]
 
 class SchedulerEvent(DelugeEvent):
     """
@@ -81,8 +91,8 @@ class Core(CorePluginBase):
         DEFAULT_PREFS["low_down"] = core_config["max_download_speed"]
         DEFAULT_PREFS["low_up"] = core_config["max_upload_speed"]
         DEFAULT_PREFS["low_active"] = core_config["max_active_limit"]
-        DEFAULT_PREFS["force_use_individual"] = core_config["force_use_individual"]
-        DEFAULT_PREFS["force_unforce_finished"] = core_config["force_unforce_finished"]
+        DEFAULT_PREFS["low_active_down"] = core_config["max_active_downloading"]
+        DEFAULT_PREFS["low_active_up"] = core_config["max_active_seeding"]
         
         self.config = deluge.configmanager.ConfigManager("myscheduler.conf", DEFAULT_PREFS)
         self.torrent_states = deluge.configmanager.ConfigManager("myschedulerstates.conf", DEFAULT_STATES)
@@ -106,30 +116,35 @@ class Core(CorePluginBase):
         now = time.localtime(time.time())
         secs_to_next_hour = ((60 - now[4]) * 60) + (60 - now[5])
         self.timer = reactor.callLater(secs_to_next_hour, self.do_schedule)
-
+        
+        # Register for config changes so state isn't overridden
+        component.get("EventManager").register_event_handler("ConfigValueChangedEvent", self.on_config_value_changed)
+        
     def disable(self):
         try:
             self.timer.cancel()
         except:
             pass
 
+        component.get("EventManager").deregister_event_handler("ConfigValueChangedEvent", self.on_config_value_changed)
         self.__apply_set_functions()
         self.torrent_states.apply_set_functions("clear")
         
     def update(self):
         pass
-
+    
+    def on_config_value_changed(self, key, value):
+        if key in CONTROLLED_SETTINGS:
+            self.do_schedule(False)
+            
     def __apply_set_functions(self):
         """
         Have the core apply it's bandwidth settings as specified in core.conf.
         """
         core_config = deluge.configmanager.ConfigManager("core.conf")
-        core_config.apply_set_functions("max_download_speed")
-        core_config.apply_set_functions("max_upload_speed")
-        core_config.apply_set_functions("max_active_limit")
-        core_config.apply_set_functions("force_use_individual")
-        core_config.apply_set_functions("force_unforce_finished")
-        
+        for setting in CONTROLLED_SETTINGS:
+            core_config.apply_set_functions(setting)
+                    
         # Resume the session if necessary
         component.get("Core").session.resume()
 
@@ -138,6 +153,7 @@ class Core(CorePluginBase):
         This is where we apply schedule rules.
         """
         log.debug("MyScheduler: do_schedule")
+        
         state = self.get_state()
         self.update_torrent()
         
@@ -152,6 +168,8 @@ class Core(CorePluginBase):
             session.set_upload_rate_limit(int(self.config["low_up"] * 1024))
             settings = session.settings()
             settings.active_limit = self.config["low_active"]
+            settings.active_downloads = self.config["low_active_down"]
+            settings.active_seeds = self.config["low_active_up"]
             session.set_settings(settings)
             # Resume the session if necessary
             component.get("Core").session.resume()
