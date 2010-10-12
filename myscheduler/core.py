@@ -81,7 +81,9 @@ class Core(CorePluginBase):
         DEFAULT_PREFS["low_down"] = core_config["max_download_speed"]
         DEFAULT_PREFS["low_up"] = core_config["max_upload_speed"]
         DEFAULT_PREFS["low_active"] = core_config["max_active_limit"]
-
+        DEFAULT_PREFS["force_use_individual"] = core_config["force_use_individual"]
+        DEFAULT_PREFS["force_unforce_finished"] = core_config["force_unforce_finished"]
+        
         self.config = deluge.configmanager.ConfigManager("myscheduler.conf", DEFAULT_PREFS)
         self.torrent_states = deluge.configmanager.ConfigManager("myschedulerstates.conf", DEFAULT_STATES)
         def clear_torrent_states(key, value):
@@ -125,6 +127,9 @@ class Core(CorePluginBase):
         core_config.apply_set_functions("max_download_speed")
         core_config.apply_set_functions("max_upload_speed")
         core_config.apply_set_functions("max_active_limit")
+        core_config.apply_set_functions("force_use_individual")
+        core_config.apply_set_functions("force_unforce_finished")
+        
         # Resume the session if necessary
         component.get("Core").session.resume()
 
@@ -132,7 +137,7 @@ class Core(CorePluginBase):
         """
         This is where we apply schedule rules.
         """
-        log.debug("%s: do_schedule", self._name)
+        log.debug("MyScheduler: do_schedule")
         state = self.get_state()
         self.update_torrent()
         

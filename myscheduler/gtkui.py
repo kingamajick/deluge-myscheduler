@@ -190,7 +190,7 @@ class GtkUI(GtkPluginBase):
         self.menu = None        
             
     def on_apply_prefs(self):
-        log.debug("applying prefs for %s" % self._name)
+        log.debug("applying prefs for MyScheduler")
         config = {}
         config["low_down"] = self.spin_download.get_value()
         config["low_up"] = self.spin_upload.get_value()
